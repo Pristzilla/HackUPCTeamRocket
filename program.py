@@ -100,6 +100,9 @@ class SpamPredictor():
         
         for i in range(0, numberOffCalls):
             
+            if not exists(f'{path}/{i}.json'): 
+                break
+
             with open(f'{path}/{i}.json', 'r') as openfile:
                 # Reading from json file
                 response = json.load(openfile)

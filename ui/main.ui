@@ -59,6 +59,13 @@
       </item>
       <item>
        <widget class="QSpinBox" name="spinBox">
+        <property name="font">
+         <font>
+          <pointsize>10</pointsize>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
         <property name="minimum">
          <number>1</number>
         </property>

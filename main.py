@@ -17,20 +17,20 @@ global spammers
 def okClicked():
 
 	global spammers
-	
+	if("spammers" in globals()):
 
-	if(len(spammers) != 0):
-		msg = QMessageBox()
-		msg.setWindowIcon(QtGui.QIcon('save.png'))
-		msg.setWindowTitle("Saved")
-		msg.setText("Results Saved succesfully in file -> potentialSpammers.txt")
-		msg.exec()
-		with open('potentialSpammers.txt','w') as f:
-			for line in spammers.keys():
-				f.write(line)
-				f.write('\n')
-		f.close()
-	
+		if(len(spammers) != 0):
+			msg = QMessageBox()
+			msg.setWindowIcon(QtGui.QIcon('save.png'))
+			msg.setWindowTitle("Saved")
+			msg.setText("Results Saved succesfully in file -> potentialSpammers.txt")
+			msg.exec()
+			with open('potentialSpammers.txt','w') as f:
+				for line in spammers.keys():
+					f.write(line)
+					f.write('\n')
+			f.close()
+		
 	
 
 def closeapp():
