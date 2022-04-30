@@ -15,9 +15,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 def okClicked():
 	msg = QMessageBox()
 	msg.setWindowTitle("Pressed Ok")
-	spammers = spamPredictor.getSuspectedSpammers()
-	window.scrollArea.add(str(spammers))
-	msg.setText("spammers")
 	msg.exec()
 	
 	
@@ -37,6 +34,11 @@ def getUrl():
 	url = window.lineEdit.text()
 	print(url)
 	spamPredictor.loadComments(url)
+	spammers = spamPredictor.getSuspectedSpammers()
+	#☼window.scrollArea.add(str(spammers))
+	for spammer in spammers:
+		object = QtGui.label("TextLabel")
+		window.scrollArea.addWidget(object)
 
 
 
