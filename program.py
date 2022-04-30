@@ -1,5 +1,6 @@
 import imp
 from urllib import response
+from colorama import Fore
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -54,10 +55,12 @@ class SpamPredictor():
 
     def loadComments(self, url, numberOffCalls):
 
-        if not exists(f'\{url}'):
+        path = self.get_id(url)
+
+        if not exists(f'{path}'):
 
             print("Downloading data...")
-            os.mkdir(f'{url}')
+            os.mkdir(f'{path}')
             count = 0
             
             #build our service from api key
@@ -74,11 +77,9 @@ class SpamPredictor():
 
             while response:
                 
-                with open(f'/{url}/{count}.json', "w") as i :
+                with open(f'{path}/{count}.json', "w") as i :
                     json.dump(response, i)
                 
-                yield
-
                 # check for nextPageToken, and if it exists, set response equal to the Json response
                 if 'nextPageToken' in response:
                     response = service.commentThreads().list(
@@ -93,7 +94,7 @@ class SpamPredictor():
                 else:
                     break
         
-        self.readAllData(f'\{url}', numberOffCalls)
+        self.readAllData(f'{path}', numberOffCalls)
     
     def readAllData(self, path, numberOffCalls):
         
@@ -168,27 +169,46 @@ class SpamPredictor():
         y_prob_author = self.UsernamePredictor.predict_proba(X_vector_author)[:,1]
 
         df['predict_prob']= y_prob
-        df['Is Scam']= y_predict
+        df['Is Scam byComment']= y_predict
         df['author_predict_prob'] = y_prob_author
         df['Is Scam byAuthor'] = y_predict_author
 
-        out = df[df['Is Scam'] == 1]
-        out2 = df[df['Is Scam byAuthor'] == 1]
-
-        finaldf = pd.concat([out, out2])
+        df['Is Scam'] = df.apply(lambda x : self.decideIsScam(x), axis=1)
 
         Row_list = {}
+        commentsPerAuthor = {}
 
-        for index, rows in finaldf.iterrows():
+        for index, rows in df[df['Is Scam'] == 1].iterrows():
             # Create list for the current row
-            my_list = rows['UserID']
+            userID = rows['UserID']
+            comment = rows["Comment"]
             
             # append the list to the final list
-            comment = rows["Comment"]
-            Row_list[my_list] = comment
+            Row_list[userID] = comment
 
+            if userID in commentsPerAuthor.keys():
+                commentsPerAuthor[userID] += 1
+            else:
+                commentsPerAuthor[userID] = 1
+
+        for key, value in commentsPerAuthor.items():
+            if value == 1:
+                Row_list.pop(key)
 
         return Row_list
+
+    def decideIsScam(self, row):
+        if row['Is Scam byComment'] == 1 or row['Is Scam byAuthor'] == 1:
+            return 1
+        else:
+            return 0
+
+        '''elif row['Is Scam byComment'] == 0 and row['Is Scam byAuthor'] == 1:
+            return 1
+        elif row['Is Scam byComment'] == 1 and row['Is Scam byAuthor'] == 0:
+            return 0
+        else:
+            return 0'''
 
     #convert to lowercase, strip and remove punctuations
     def preprocess(self, text):
