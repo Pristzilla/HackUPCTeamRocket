@@ -47,7 +47,7 @@ class SpamPredictor():
         self.wl = WordNetLemmatizer()
 
 
-    def loadComments(self, url):
+    def loadComments(self, url, numberOfCalls, commentsPerCall):
 
         #build our service from api key
         service = self.build_service('Api_Key.txt')
@@ -55,66 +55,66 @@ class SpamPredictor():
         #make an API call using our service
         response = service.commentThreads().list(
             part='id, snippet, replies',
-            maxResults=100,
+            maxResults=commentsPerCall,
             textFormat='plainText',
             order='time',
             videoId=self.get_id(url)
         ).execute()
+        for i in range (0, numberOfCalls):
+            for item in response['items']:
+                comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
+                #comment_id = item['snippet']['topLevelComment']['id']
+                reply_count = item['snippet']['totalReplyCount']
+                #isReply = False
+                authorName = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
+                
+                if 'authorChannelId' in item['snippet']['topLevelComment']['snippet']:
+                    authorId =  item['snippet']['topLevelComment']['snippet']['authorChannelId']['value']
+                else:
+                    authorId = None
 
-        for item in response['items']:
-            comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
-            #comment_id = item['snippet']['topLevelComment']['id']
-            reply_count = item['snippet']['totalReplyCount']
-            #isReply = False
-            authorName = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
-            
-            if 'authorChannelId' in item['snippet']['topLevelComment']['snippet']:
-                authorId =  item['snippet']['topLevelComment']['snippet']['authorChannelId']['value']
-            else:
-                authorId = None
+                #append to lists
+                self.Comments.append(comment)
+                #commentsId.append(comment_id)
+                #repliesCount.append(reply_count)
+                #isReplies.append(isReply)
+                self.Usernames.append(authorName)
+                self.UserIds.append(authorId)
 
-            #append to lists
-            self.Comments.append(comment)
-            #commentsId.append(comment_id)
-            #repliesCount.append(reply_count)
-            #isReplies.append(isReply)
-            self.Usernames.append(authorName)
-            self.UserIds.append(authorId)
+                if reply_count > 0 and 'replies' in item:
+                    for reply in item['replies']['comments']:
+                        reply_comment = reply['snippet']['textDisplay']
+                        #reply_comment_id = reply['id']
+                        #reply_reply_count = 0
+                        #isReply = True
+                        reply_author_name = reply['snippet']['authorDisplayName']
+                        if 'authorChannelId' in reply['snippet']:
+                            reply_author_id = reply['snippet']['authorChannelId']['value']
+                        else:
+                            reply_author_id = None
 
-            if reply_count > 0 and 'replies' in item:
-                for reply in item['replies']['comments']:
-                    reply_comment = reply['snippet']['textDisplay']
-                    #reply_comment_id = reply['id']
-                    #reply_reply_count = 0
-                    #isReply = True
-                    reply_author_name = reply['snippet']['authorDisplayName']
-                    if 'authorChannelId' in reply['snippet']:
-                        reply_author_id = reply['snippet']['authorChannelId']['value']
-                    else:
-                        reply_author_id = None
-
-                    #append to lists
-                    self.Comments.append(reply_comment)
-                    #commentsId.append(reply_comment_id)
-                    #repliesCount.append(reply_reply_count)
-                    #isReplies.append(isReply)
-                    self.Usernames.append(reply_author_name)
-                    self.UserIds.append(reply_author_id)
-            
-            '''
-            # check for nextPageToken, and if it exists, set response equal to the Json response
-            if 'nextPageToken' in response:
-                response = service.commentThreads().list(
-                    part='id, snippet, replies',
-                    maxResults=100,
-                    textFormat='plainText',
-                    order='time',
-                    videoId=self.get_id(url),
-                    pageToken=response['nextPageToken']
-                ).execute()
-            else:
-                break
-            '''
+                        #append to lists
+                        self.Comments.append(reply_comment)
+                        #commentsId.append(reply_comment_id)
+                        #repliesCount.append(reply_reply_count)
+                        #isReplies.append(isReply)
+                        self.Usernames.append(reply_author_name)
+                        self.UserIds.append(reply_author_id)
+                
+                
+                # check for nextPageToken, and if it exists, set response equal to the Json response
+                if 'nextPageToken' in response and i < numberOfCalls:
+                    response = service.commentThreads().list(
+                        part='id, snippet, replies',
+                        maxResults=commentsPerCall,
+                        textFormat='plainText',
+                        order='time',
+                        videoId=self.get_id(url),
+                        pageToken=response['nextPageToken']
+                    ).execute()
+                else:
+                    break
+                
 
         pass
     
@@ -152,14 +152,16 @@ class SpamPredictor():
 
         finaldf = pd.concat([out, out2])
 
-        Row_list = []
+        Row_list = {}
 
         for index, rows in finaldf.iterrows():
             # Create list for the current row
             my_list = rows['UserID']
             
             # append the list to the final list
-            Row_list.append(my_list)
+            comment = rows["Comment"]
+            Row_list[my_list] = comment
+
 
         return Row_list
 

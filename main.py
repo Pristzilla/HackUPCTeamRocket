@@ -30,15 +30,23 @@ def initializeWindow():
 	window.pushButton_3.clicked.connect(getUrl)
 
 
+
+
 def getUrl():
 	url = window.lineEdit.text()
 	print(url)
-	spamPredictor.loadComments(url)
+	spamPredictor.loadComments(url, window.spinBox.value(), window.spinBox_2.value())
 	spammers = spamPredictor.getSuspectedSpammers()
-	#☼window.scrollArea.add(str(spammers))
-	for spammer in spammers:
-		object = QtGui.label("TextLabel")
-		window.scrollArea.addWidget(object)
+	window.tableWidget.setRowCount(spammers.__len__())
+
+	i = 0
+
+	for key,element in spammers.items():
+		
+		window.tableWidget.setItem(i,0, QtWidgets.QTableWidgetItem(key))
+		window.tableWidget.setItem(i,1, QtWidgets.QTableWidgetItem(element))
+		i+=1
+
 
 
 
@@ -46,9 +54,9 @@ def getUrl():
 app = QtWidgets.QApplication(sys.argv)
 #Cogemos la clase mainwindow, implementada desde Qt desginer como ventana.
 window = MainWindow()
-window.show()
-
 spamPredictor = SpamPredictor()
 
+window.show()
 initializeWindow()
+
 app.exec()
