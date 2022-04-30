@@ -52,7 +52,7 @@ def getUrl():
 	url = window.lineEdit.text()
 	print(url)
 	if(url != ""):
-		spamPredictor.loadComments(url, window.spinBox.value(), window.spinBox_2.value())
+		spamPredictor.loadComments(url, window.spinBox.value())
 		spammers = spamPredictor.getSuspectedSpammers()
 		print("Spammers succesfully identyfied")
 		window.tableWidget.setRowCount(spammers.__len__())
