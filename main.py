@@ -15,7 +15,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 def okClicked():
 	msg = QMessageBox()
 	msg.setWindowTitle("Pressed Ok")
-	msg.setText("Webo!")
+	spammers = spamPredictor.getSuspectedSpammers()
+	window.scrollArea.add(str(spammers))
+	msg.setText("spammers")
 	msg.exec()
 	
 	
@@ -44,7 +46,7 @@ app = QtWidgets.QApplication(sys.argv)
 window = MainWindow()
 window.show()
 
-spamPredictor = SpamPredictor
+spamPredictor = SpamPredictor()
 
 initializeWindow()
 app.exec()
