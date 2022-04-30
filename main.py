@@ -35,7 +35,7 @@ def initializeWindow():
 def getUrl():
 	url = window.lineEdit.text()
 	print(url)
-	spamPredictor.loadComments(url, window.spinBox.value(), window.spinBox_2.value())
+	spamPredictor.loadComments(url, window.spinBox.value())
 	spammers = spamPredictor.getSuspectedSpammers()
 	window.tableWidget.setRowCount(spammers.__len__())
 

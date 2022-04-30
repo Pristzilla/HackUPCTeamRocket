@@ -1,9 +1,14 @@
+import imp
+from urllib import response
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import joblib
 from apiclient.discovery import build
 from urllib.parse import urlparse, parse_qs
+from os.path import exists
+import os
+import json
 
 #for text pre-processing
 import re, string
@@ -47,76 +52,96 @@ class SpamPredictor():
         self.wl = WordNetLemmatizer()
 
 
-    def loadComments(self, url, numberOfCalls, commentsPerCall):
+    def loadComments(self, url, numberOffCalls):
 
-        #build our service from api key
-        service = self.build_service('Api_Key.txt')
+        if not exists(f'\{url}'):
 
-        #make an API call using our service
-        response = service.commentThreads().list(
-            part='id, snippet, replies',
-            maxResults=commentsPerCall,
-            textFormat='plainText',
-            order='time',
-            videoId=self.get_id(url)
-        ).execute()
-        for i in range (0, numberOfCalls):
-            for item in response['items']:
-                comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
-                #comment_id = item['snippet']['topLevelComment']['id']
-                reply_count = item['snippet']['totalReplyCount']
-                #isReply = False
-                authorName = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
+            print("Downloading data...")
+            os.mkdir(f'{url}')
+            count = 0
+            
+            #build our service from api key
+            service = self.build_service('Api_Key.txt')
+
+            #make an API call using our service
+            response = service.commentThreads().list(
+                part='id, snippet, replies',
+                maxResults=100,
+                textFormat='plainText',
+                order='time',
+                videoId=self.get_id(url)
+            ).execute()
+
+            while response:
                 
-                if 'authorChannelId' in item['snippet']['topLevelComment']['snippet']:
-                    authorId =  item['snippet']['topLevelComment']['snippet']['authorChannelId']['value']
-                else:
-                    authorId = None
-
-                #append to lists
-                self.Comments.append(comment)
-                #commentsId.append(comment_id)
-                #repliesCount.append(reply_count)
-                #isReplies.append(isReply)
-                self.Usernames.append(authorName)
-                self.UserIds.append(authorId)
-
-                if reply_count > 0 and 'replies' in item:
-                    for reply in item['replies']['comments']:
-                        reply_comment = reply['snippet']['textDisplay']
-                        #reply_comment_id = reply['id']
-                        #reply_reply_count = 0
-                        #isReply = True
-                        reply_author_name = reply['snippet']['authorDisplayName']
-                        if 'authorChannelId' in reply['snippet']:
-                            reply_author_id = reply['snippet']['authorChannelId']['value']
-                        else:
-                            reply_author_id = None
-
-                        #append to lists
-                        self.Comments.append(reply_comment)
-                        #commentsId.append(reply_comment_id)
-                        #repliesCount.append(reply_reply_count)
-                        #isReplies.append(isReply)
-                        self.Usernames.append(reply_author_name)
-                        self.UserIds.append(reply_author_id)
+                with open(f'/{url}/{count}.json', "w") as i :
+                    json.dump(response, i)
                 
-                
+                yield
+
                 # check for nextPageToken, and if it exists, set response equal to the Json response
-                if 'nextPageToken' in response and i < numberOfCalls:
+                if 'nextPageToken' in response:
                     response = service.commentThreads().list(
                         part='id, snippet, replies',
-                        maxResults=commentsPerCall,
+                        maxResults=100,
                         textFormat='plainText',
                         order='time',
                         videoId=self.get_id(url),
                         pageToken=response['nextPageToken']
                     ).execute()
+                    count+=1
                 else:
                     break
-                
+        
+        self.readAllData(f'\{url}', numberOffCalls)
+    
+    def readAllData(self, path, numberOffCalls):
+        
+        for i in range(0, numberOffCalls):
+            
+            with open(f'{path}/{i}.json', 'r') as openfile:
+                # Reading from json file
+                response = json.load(openfile)
 
-        pass
+                for item in response['items']:
+                    comment = item['snippet']['topLevelComment']['snippet']['textDisplay']
+                    #comment_id = item['snippet']['topLevelComment']['id']
+                    reply_count = item['snippet']['totalReplyCount']
+                    #isReply = False
+                    authorName = item['snippet']['topLevelComment']['snippet']['authorDisplayName']
+                    
+                    if 'authorChannelId' in item['snippet']['topLevelComment']['snippet']:
+                        authorId =  item['snippet']['topLevelComment']['snippet']['authorChannelId']['value']
+                    else:
+                        authorId = None
+
+                    #append to lists
+                    self.Comments.append(comment)
+                    #commentsId.append(comment_id)
+                    #repliesCount.append(reply_count)
+                    #isReplies.append(isReply)
+                    self.Usernames.append(authorName)
+                    self.UserIds.append(authorId)
+
+                    if reply_count > 0 and 'replies' in item:
+                        for reply in item['replies']['comments']:
+                            reply_comment = reply['snippet']['textDisplay']
+                            #reply_comment_id = reply['id']
+                            #reply_reply_count = 0
+                            #isReply = True
+                            reply_author_name = reply['snippet']['authorDisplayName']
+                            if 'authorChannelId' in reply['snippet']:
+                                reply_author_id = reply['snippet']['authorChannelId']['value']
+                            else:
+                                reply_author_id = None
+
+                            #append to lists
+                            self.Comments.append(reply_comment)
+                            #commentsId.append(reply_comment_id)
+                            #repliesCount.append(reply_reply_count)
+                            #isReplies.append(isReply)
+                            self.Usernames.append(reply_author_name)
+                            self.UserIds.append(reply_author_id)
     
     def getSuspectedSpammers(self):
 
