@@ -50,7 +50,13 @@ def initializeWindow():
 def getUrl():
 	global spammers
 	url = window.lineEdit.text()
+	
+
+	if(url == ""):
+		url = "https://www.youtube.com/watch?v=hD1YtmKXNb4"
+
 	print(url)
+	
 	if(url != ""):
 		spamPredictor.loadComments(url, window.spinBox.value())
 		spammers = spamPredictor.getSuspectedSpammers()
@@ -64,7 +70,7 @@ def getUrl():
 			window.tableWidget.setItem(i,0, QtWidgets.QTableWidgetItem(key))
 			window.tableWidget.setItem(i,1, QtWidgets.QTableWidgetItem(element))
 			i+=1
-
+	
 
 
 
